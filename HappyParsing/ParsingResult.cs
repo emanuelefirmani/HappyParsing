@@ -4,6 +4,7 @@ internal abstract record ParsingResult<T>
 {
     public abstract TOut Match<TOut>(Func<T, TOut> whenSuccessful, Func<string, TOut> whenFailed);
     public abstract ParsingResult<TOut> Map<TOut>(Func<T, TOut> f);
+    public abstract ParsingResult<TOut> Bind<TOut>(Func<T, ParsingResult<TOut>> f);
     private ParsingResult() { }
     
     public record Success(T Value) : ParsingResult<T>
@@ -13,6 +14,9 @@ internal abstract record ParsingResult<T>
 
         public override ParsingResult<TOut> Map<TOut>(Func<T, TOut> f) =>
             new ParsingResult<TOut>.Success(f(Value));
+
+        public override ParsingResult<TOut> Bind<TOut>(Func<T, ParsingResult<TOut>> f) =>
+            f(Value);
     }
 
     public record Failure(string Message) : ParsingResult<T>
@@ -21,6 +25,9 @@ internal abstract record ParsingResult<T>
             whenFailed(Message);
 
         public override ParsingResult<TOut> Map<TOut>(Func<T, TOut> f) =>
+            new ParsingResult<TOut>.Failure(Message);
+
+        public override ParsingResult<TOut> Bind<TOut>(Func<T, ParsingResult<TOut>> f) =>
             new ParsingResult<TOut>.Failure(Message);
     }
 }
@@ -42,11 +49,9 @@ internal static class ParsingResultExtensions
 
     internal static ParsingResult<decimal?> DivideBy(this ParsingResult<decimal?> dividend,
         ParsingResult<decimal> divisor) =>
-        dividend.Match(
-            p1 => divisor.Match<ParsingResult<decimal?>>(
-                p2 => new ParsingResult<decimal?>.Success(p1 / p2),
-                err => new ParsingResult<decimal?>.Failure(err)
-            ),
-            err => new ParsingResult<decimal?>.Failure(err)
+        dividend.Bind(
+            p1 => divisor.Map(
+                p2 => p1 / p2
+            )
         );
 }
