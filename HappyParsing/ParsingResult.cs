@@ -38,10 +38,7 @@ internal static class ParsingResultExtensions
         result.Match(v => v, _ => default(T?));
 
     internal static ParsingResult<decimal> Or(this ParsingResult<decimal?> dividend, decimal fallback) =>
-        dividend.Match<ParsingResult<decimal>>(
-            v => new ParsingResult<decimal>.Success(v ?? fallback),
-            err => new ParsingResult<decimal>.Failure(err)
-        );
+        dividend.Map(v => v ?? fallback);
 
     internal static ParsingResult<decimal?> DivideBy(this ParsingResult<decimal?> dividend,
         ParsingResult<decimal> divisor) =>
