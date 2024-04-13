@@ -80,4 +80,24 @@ public class ParsingDecimals
         
         Assert.Equal(expected, actual.MatchValue());
     }
+
+    [Fact]
+    void maps_success()
+    {
+        var original = new ParsingResult<int>.Success(42);
+
+        var actual = original.Map(x => x / 2);
+
+        Assert.Equal(21, actual.MatchValue());
+    }
+
+    [Fact]
+    void maps_failure()
+    {
+        var original = new ParsingResult<int>.Failure("error");
+
+        var actual = original.Map(x => x / 2);
+
+        Assert.Equal("error", actual.MatchMessage());
+    }
 }

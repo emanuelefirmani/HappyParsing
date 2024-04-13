@@ -3,18 +3,25 @@
 internal abstract record ParsingResult<T>
 {
     public abstract TOut Match<TOut>(Func<T, TOut> whenSuccessful, Func<string, TOut> whenFailed);
+    public abstract ParsingResult<TOut> Map<TOut>(Func<T, TOut> f);
     private ParsingResult() { }
     
     public record Success(T Value) : ParsingResult<T>
     {
         public override TOut Match<TOut>(Func<T, TOut> whenSuccessful, Func<string, TOut> whenFailed) =>
             whenSuccessful(Value);
+
+        public override ParsingResult<TOut> Map<TOut>(Func<T, TOut> f) =>
+            new ParsingResult<TOut>.Success(f(Value));
     }
 
     public record Failure(string Message) : ParsingResult<T>
     {
         public override TOut Match<TOut>(Func<T, TOut> whenSuccessful, Func<string, TOut> whenFailed) =>
             whenFailed(Message);
+
+        public override ParsingResult<TOut> Map<TOut>(Func<T, TOut> f) =>
+            new ParsingResult<TOut>.Failure(Message);
     }
 }
 
@@ -24,7 +31,7 @@ internal static class ParsingResultExtensions
         string.Join("|",
             results.Select(MatchMessage).Where(x => !string.IsNullOrEmpty(x)));
 
-    private static string MatchMessage<T>(this ParsingResult<T> x) =>
+    internal static string MatchMessage<T>(this ParsingResult<T> x) =>
         x.Match(_ => "", m => m);
 
     internal static T? MatchValue<T>(this ParsingResult<T> result) =>
