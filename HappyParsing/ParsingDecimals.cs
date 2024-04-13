@@ -65,4 +65,19 @@ public class ParsingDecimals
 
         Assert.Equal(expected, actual);
     }
+
+    [Theory]
+    [InlineData(null, 1, 0, null)]
+    [InlineData(null, null, 1, null)]
+    [InlineData(4, null, 2, 2)]
+    [InlineData(14, 7, 3, 2)]
+    void divides_parsed_results_with_default(int? left, int? right, decimal defaultValue, int? expected)
+    {
+        var dividend = new ParsingResult<decimal?>.Success(left);
+        var divisor = new ParsingResult<decimal?>.Success(right);
+
+        var actual = dividend.DivideBy(divisor.Or(defaultValue));
+        
+        Assert.Equal(expected, actual.MatchValue());
+    }
 }
