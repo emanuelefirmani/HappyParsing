@@ -4,28 +4,45 @@ internal class SimpleParser
 {
     internal static DecimalDataObject ParseDecimal(InputDataObject value)
     {
-        var (amount, message) = ParseValue(value.Amount, "invalid Amount");
-        var (size, errorMessageSize) = ParseValue(value.Size, "invalid Size");
+        var parsedAmount = ParseValue(value.Amount, "invalid Amount");
+        var parsedSize = ParseValue(value.Size, "invalid Size");
 
-        message += (message == "" || errorMessageSize == "" ? "" : "|") + errorMessageSize;
+        var fullMessage = parsedAmount.Message + (parsedAmount.Message == "" || parsedSize.Message == "" ? "" : "|") + parsedSize.Message;
         
         return new DecimalDataObject(
-            amount,
-            size,
-            amount * size,
-            message
+            parsedAmount.Amount,
+            parsedSize.Amount,
+            parsedAmount.Amount * parsedSize.Amount,
+            fullMessage
         );
     }
 
-    private static (decimal? amount, string message) ParseValue(string valueAmount, string errorMessage)
+    private static Result ParseValue(string valueAmount, string errorMessage)
     {
         if (string.IsNullOrEmpty(valueAmount))
-            return (null, "");
-        
-        if (decimal.TryParse(valueAmount, out var parsedAmount))
-            return (parsedAmount, "");
-        
-        return (null, errorMessage);
+            return new Result.Success(null);
 
+        if (decimal.TryParse(valueAmount, out var parsedAmount))
+            return new Result.Success(parsedAmount);
+        
+        return new Result.Failure(errorMessage);
+    }
+}
+
+abstract record Result
+{
+    internal abstract decimal? Amount { get; }
+    internal abstract string Message { get; }
+    
+    internal record Success(decimal? Amount) : Result
+    {
+        internal override decimal? Amount { get; } = Amount;
+        internal override string Message => "";
+    }
+
+    internal record Failure(string Message) : Result
+    {
+        internal override decimal? Amount => null;
+        internal override string Message { get; } = Message;
     }
 }
