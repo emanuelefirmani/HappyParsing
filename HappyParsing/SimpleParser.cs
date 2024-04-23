@@ -7,12 +7,14 @@ internal class SimpleParser
         var parsedAmount = ParseValue(value.Amount, "invalid Amount");
         var parsedSize = ParseValue(value.Size, "invalid Size");
 
-        var fullMessage = parsedAmount.Message + (parsedAmount.Message == "" || parsedSize.Message == "" ? "" : "|") + parsedSize.Message;
+        var fullMessage = parsedAmount.MatchMessage() + 
+                          (parsedAmount.MatchMessage() == "" || parsedSize.MatchMessage() == "" ? "" : "|") +
+                          parsedSize.MatchMessage();
         
         return new DecimalDataObject(
-            parsedAmount.Amount,
-            parsedSize.Amount,
-            parsedAmount.Amount * parsedSize.Amount,
+            parsedAmount.MatchAmount(),
+            parsedSize.MatchAmount(),
+            parsedAmount.MatchAmount() * parsedSize.MatchAmount(),
             fullMessage
         );
     }
@@ -31,18 +33,31 @@ internal class SimpleParser
 
 abstract record Result
 {
-    internal abstract decimal? Amount { get; }
-    internal abstract string Message { get; }
-    
+    internal abstract T Match<T>(Func<decimal?, T> whenSuccess, Func<string, T> whenFailure);
+
     internal record Success(decimal? Amount) : Result
     {
-        internal override decimal? Amount { get; } = Amount;
-        internal override string Message => "";
+        internal override T Match<T>(Func<decimal?, T> whenSuccess, Func<string, T> whenFailure) =>
+            whenSuccess(Amount);
     }
 
     internal record Failure(string Message) : Result
     {
-        internal override decimal? Amount => null;
-        internal override string Message { get; } = Message;
+        internal override T Match<T>(Func<decimal?, T> whenSuccess, Func<string, T> whenFailure) =>
+            whenFailure(Message);
     }
+}
+
+internal static class Extensions
+{
+    internal static decimal? MatchAmount(this Result result) =>
+        result.Match(
+            d => d,
+            _ => null
+        );
+    internal static string MatchMessage(this Result result) =>
+        result.Match(
+            _ => "",
+            m => m
+        );
 }
