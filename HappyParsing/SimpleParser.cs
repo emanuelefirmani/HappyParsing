@@ -4,24 +4,10 @@ internal class SimpleParser
 {
     internal static DecimalDataObject ParseDecimal(InputDataObject value)
     {
-        var message = "";
-        decimal? amount = null;
-        if(!string.IsNullOrEmpty(value.Amount))
-        {
-            if (decimal.TryParse(value.Amount, out var parsedAmount))
-                amount = parsedAmount;
-            else
-                message = "invalid Amount";
-        }
+        var (amount, message) = ParseValue(value.Amount, "invalid Amount");
+        var (size, errorMessageSize) = ParseValue(value.Size, "invalid Size");
 
-        decimal? size = null;
-        if(!string.IsNullOrEmpty(value.Size))
-        {
-            if (decimal.TryParse(value.Size, out var parsedSize))
-                size = parsedSize;
-            else
-                message += (message == "" ? "" : "|") + "invalid Size";
-        }
+        message += (message == "" || errorMessageSize == "" ? "" : "|") + errorMessageSize;
         
         return new DecimalDataObject(
             amount,
@@ -29,5 +15,17 @@ internal class SimpleParser
             amount * size,
             message
         );
+    }
+
+    private static (decimal? amount, string message) ParseValue(string valueAmount, string errorMessage)
+    {
+        if (string.IsNullOrEmpty(valueAmount))
+            return (null, "");
+        
+        if (decimal.TryParse(valueAmount, out var parsedAmount))
+            return (parsedAmount, "");
+        
+        return (null, errorMessage);
+
     }
 }
