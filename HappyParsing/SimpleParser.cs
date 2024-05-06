@@ -34,11 +34,13 @@ internal class SimpleParser
 abstract record Result<TRight>
 {
     internal abstract Result<T> Map<T>(Func<TRight, T> f);
+    internal abstract Result<T> Bind<T>(Func<TRight, Result<T>> f);
     internal abstract T Match<T>(Func<TRight, T> whenSuccess, Func<string, T> whenFailure);
 
     internal record Success(TRight Right) : Result<TRight>
     {
         internal override Result<T> Map<T>(Func<TRight, T> f) => new Result<T>.Success(f(Right));
+        internal override Result<T> Bind<T>(Func<TRight, Result<T>> f) => f(Right);
         internal override T Match<T>(Func<TRight, T> whenSuccess, Func<string, T> whenFailure) =>
             whenSuccess(Right);
     }
@@ -46,6 +48,7 @@ abstract record Result<TRight>
     internal record Failure(string Message) : Result<TRight>
     {
         internal override Result<T> Map<T>(Func<TRight, T> f) => new Result<T>.Failure(Message);
+        internal override Result<T> Bind<T>(Func<TRight, Result<T>> f) => new Result<T>.Failure(Message);
         internal override T Match<T>(Func<TRight, T> whenSuccess, Func<string, T> whenFailure) =>
             whenFailure(Message);
     }
@@ -68,5 +71,5 @@ internal static class Extensions
         result.Map(d => d ?? fallback);
 
     internal static Result<decimal?> DivideBy(this Result<decimal?> dividend, Result<decimal> divisor) =>
-        dividend;
+        dividend.Bind(d1 => divisor.Map(d2 => d1 / d2));
 }
