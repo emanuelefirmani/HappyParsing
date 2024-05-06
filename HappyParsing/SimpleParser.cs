@@ -33,16 +33,19 @@ internal class SimpleParser
 
 abstract record Result<TRight>
 {
+    internal abstract Result<T> Map<T>(Func<TRight, T> f);
     internal abstract T Match<T>(Func<TRight, T> whenSuccess, Func<string, T> whenFailure);
 
     internal record Success(TRight Right) : Result<TRight>
     {
+        internal override Result<T> Map<T>(Func<TRight, T> f) => new Result<T>.Success(f(Right));
         internal override T Match<T>(Func<TRight, T> whenSuccess, Func<string, T> whenFailure) =>
             whenSuccess(Right);
     }
 
     internal record Failure(string Message) : Result<TRight>
     {
+        internal override Result<T> Map<T>(Func<TRight, T> f) => new Result<T>.Failure(Message);
         internal override T Match<T>(Func<TRight, T> whenSuccess, Func<string, T> whenFailure) =>
             whenFailure(Message);
     }
@@ -62,5 +65,5 @@ internal static class Extensions
         );
 
     internal static Result<decimal> Or(this Result<decimal?> result, decimal fallback) =>
-        new Result<decimal>.Success(fallback);
+        result.Map(d => d ?? fallback);
 }
