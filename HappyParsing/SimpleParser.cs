@@ -50,14 +50,17 @@ abstract record Result<TRight>
 
 internal static class Extensions
 {
-    internal static decimal? MatchAmount(this Result<decimal?> result) =>
+    internal static T? MatchAmount<T>(this Result<T> result) =>
         result.Match(
             d => d,
-            _ => null
+            _ => default(T)
         );
-    internal static string MatchMessage(this Result<decimal?> result) =>
+    internal static string MatchMessage<T>(this Result<T> result) =>
         result.Match(
             _ => "",
             m => m
         );
+
+    internal static Result<decimal> Or(this Result<decimal?> result, decimal fallback) =>
+        new Result<decimal>.Success(fallback);
 }
