@@ -66,4 +66,7 @@ internal static class Extensions
 
     internal static Result<decimal> Or(this Result<decimal?> result, decimal fallback) =>
         result.Map(d => d ?? fallback);
+
+    internal static Result<decimal?> DivideBy(this Result<decimal?> dividend, Result<decimal> divisor) =>
+        dividend;
 }
