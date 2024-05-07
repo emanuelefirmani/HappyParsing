@@ -19,43 +19,43 @@ internal class SimpleParser
         );
     }
 
-    private static Result ParseValue(string valueAmount, string errorMessage)
+    private static Result<decimal?> ParseValue(string valueAmount, string errorMessage)
     {
         if (string.IsNullOrEmpty(valueAmount))
-            return new Result.Success(null);
+            return new Result<decimal?>.Success(null);
 
         if (decimal.TryParse(valueAmount, out var parsedAmount))
-            return new Result.Success(parsedAmount);
+            return new Result<decimal?>.Success(parsedAmount);
         
-        return new Result.Failure(errorMessage);
+        return new Result<decimal?>.Failure(errorMessage);
     }
 }
 
-abstract record Result
+abstract record Result<TRight>
 {
-    internal abstract T Match<T>(Func<decimal?, T> whenSuccess, Func<string, T> whenFailure);
+    internal abstract T Match<T>(Func<TRight, T> whenSuccess, Func<string, T> whenFailure);
 
-    internal record Success(decimal? Amount) : Result
+    internal record Success(TRight Amount) : Result<TRight>
     {
-        internal override T Match<T>(Func<decimal?, T> whenSuccess, Func<string, T> whenFailure) =>
+        internal override T Match<T>(Func<TRight, T> whenSuccess, Func<string, T> whenFailure) =>
             whenSuccess(Amount);
     }
 
-    internal record Failure(string Message) : Result
+    internal record Failure(string Message) : Result<TRight>
     {
-        internal override T Match<T>(Func<decimal?, T> whenSuccess, Func<string, T> whenFailure) =>
+        internal override T Match<T>(Func<TRight, T> whenSuccess, Func<string, T> whenFailure) =>
             whenFailure(Message);
     }
 }
 
 internal static class Extensions
 {
-    internal static decimal? MatchAmount(this Result result) =>
+    internal static decimal? MatchAmount(this Result<decimal?> result) =>
         result.Match(
             d => d,
             _ => null
         );
-    internal static string MatchMessage(this Result result) =>
+    internal static string MatchMessage(this Result<decimal?> result) =>
         result.Match(
             _ => "",
             m => m
