@@ -65,4 +65,20 @@ public class ParsingDecimals
 
         Assert.Equal(expected, actual);
     }
+
+    [Fact]
+    void maps_to_something_else()
+    {
+        var result = new Result<decimal?>.Success(null);
+
+        Assert.Equal(1, result.Or(1).MatchAmount());
+    }
+
+    [Fact]
+    void does_not_map_failure()
+    {
+        var result = new Result<decimal?>.Failure("you know");
+
+        Assert.Equal("you know", result.Or(1).MatchMessage());
+    }
 }
