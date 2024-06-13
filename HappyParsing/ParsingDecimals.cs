@@ -69,7 +69,7 @@ public class ParsingDecimals
     [Fact]
     void maps_to_something_else()
     {
-        var result = new Result<decimal?>.Success(null);
+        var result = new Either<string, decimal?>.Success(null);
 
         Assert.Equal(1, result.Or(1).MatchAmount());
     }
@@ -77,8 +77,23 @@ public class ParsingDecimals
     [Fact]
     void does_not_map_failure()
     {
-        var result = new Result<decimal?>.Failure("you know");
+        var result = new Either<string, decimal?>.Failure("you know");
 
         Assert.Equal("you know", result.Or(1).MatchMessage());
+    }
+    
+    [Theory]
+    [InlineData(null, 1, 0, null)]
+    [InlineData(null, null, 1, null)]
+    [InlineData(4, null, 2, 2)]
+    [InlineData(14, 7, 3, 2)]
+    void divides_parsed_results_with_default(int? left, int? right, decimal defaultValue, int? expected)
+    {
+        var dividend = new Either<string, decimal?>.Success(left);
+        var divisor = new Either<string, decimal?>.Success(right);
+
+        var actual = dividend.DivideBy(divisor.Or(defaultValue));
+        
+        Assert.Equal(expected, actual.MatchAmount());
     }
 }

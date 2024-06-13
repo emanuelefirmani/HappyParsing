@@ -19,33 +19,36 @@ internal class SimpleParser
         );
     }
 
-    private static Result<decimal?> ParseValue(string valueAmount, string errorMessage)
+    private static Either<string, decimal?> ParseValue(string valueAmount, string errorMessage)
     {
         if (string.IsNullOrEmpty(valueAmount))
-            return new Result<decimal?>.Success(null);
+            return new Either<string, decimal?>.Success(null);
 
         if (decimal.TryParse(valueAmount, out var parsedAmount))
-            return new Result<decimal?>.Success(parsedAmount);
+            return new Either<string, decimal?>.Success(parsedAmount);
         
-        return new Result<decimal?>.Failure(errorMessage);
+        return new Either<string, decimal?>.Failure(errorMessage);
     }
 }
 
-abstract record Result<TRight>
+abstract record Either<TLeft, TRight>
 {
-    internal abstract Result<T> Map<T>(Func<TRight, T> f);
+    internal abstract Either<TLeft, T> Bind<T>(Func<TRight, Either<TLeft, T>> f);
+    internal abstract Either<TLeft, T> Map<T>(Func<TRight, T> f);
     internal abstract T Match<T>(Func<TRight, T> whenSuccess, Func<string, T> whenFailure);
 
-    internal record Success(TRight Amount) : Result<TRight>
+    internal record Success(TRight Amount) : Either<TLeft, TRight>
     {
-        internal override Result<T> Map<T>(Func<TRight, T> f) => new Result<T>.Success(f(Amount));
+        internal override Either<TLeft, T> Bind<T>(Func<TRight, Either<TLeft, T>> f) => f(Amount);
+        internal override Either<TLeft, T> Map<T>(Func<TRight, T> f) => new Either<TLeft, T>.Success(f(Amount));
         internal override T Match<T>(Func<TRight, T> whenSuccess, Func<string, T> whenFailure) =>
             whenSuccess(Amount);
     }
 
-    internal record Failure(string Message) : Result<TRight>
+    internal record Failure(string Message) : Either<TLeft, TRight>
     {
-        internal override Result<T> Map<T>(Func<TRight, T> f) => new Result<T>.Failure(Message);
+        internal override Either<TLeft, T> Bind<T>(Func<TRight, Either<TLeft, T>> f) => new Either<TLeft, T>.Failure(Message);
+        internal override Either<TLeft, T> Map<T>(Func<TRight, T> f) => new Either<TLeft, T>.Failure(Message);
         internal override T Match<T>(Func<TRight, T> whenSuccess, Func<string, T> whenFailure) =>
             whenFailure(Message);
     }
@@ -53,17 +56,20 @@ abstract record Result<TRight>
 
 internal static class Extensions
 {
-    internal static T? MatchAmount<T>(this Result<T?> result) =>
-        result.Match(
+    internal static T? MatchAmount<T>(this Either<string, T?> either) =>
+        either.Match(
             d => d,
             _ => default
         );
-    internal static string MatchMessage<T>(this Result<T> result) =>
-        result.Match(
+    internal static string MatchMessage<T>(this Either<string, T> either) =>
+        either.Match(
             _ => "",
             m => m
         );
 
-    internal static Result<decimal> Or(this Result<decimal?> result, decimal fallback) =>
-        result.Map(v => v ?? fallback);
+    internal static Either<string, decimal> Or(this Either<string, decimal?> either, decimal fallback) =>
+        either.Map(v => v ?? fallback);
+    
+    internal static Either<string, decimal?> DivideBy(this Either<string, decimal?> dividend, Either<string, decimal> divisor) =>
+        dividend.Bind(v1 => divisor.Map(v2 => v1 / v2));
 }
